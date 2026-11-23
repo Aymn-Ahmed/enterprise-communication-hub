@@ -16,6 +16,11 @@
 Instead of rebuilding internal messaging from scratch inside every business application, this module provides a decoupled **ASP.NET Core + SignalR** backend service paired with an embeddable **React + TypeScript** widget—enabling organizations to launch 1-to-1 chats, department channels, official announcements, and media sharing while reusing their host application's authentication and user directory.
 
 ---
+## 📸 Screenshots
+
+<img width="1280" height="720" alt="4" src="https://github.com/user-attachments/assets/b790c4aa-0ce0-492a-84d0-34a7155cc22b" />
+<img width="1280" height="720" alt="2" src="https://github.com/user-attachments/assets/2b7386de-2b4d-4a4a-9602-ceb45f84ccb8" />
+<img width="1280" height="720" alt="3" src="https://github.com/user-attachments/assets/a505ba24-cd18-44f1-8b5f-d47d73531dfb" />
 
 ## ✨ Key Features
 
