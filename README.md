@@ -157,7 +157,9 @@ export function YourApp() {
       {/* Host Application Content */}
       
       {/* Communication Widget */}
-      <CommunicationHubWidget onClose="{()" open="{isOpen}"> setIsOpen(false)}
+     <CommunicationHubWidget 
+        open={isOpen} 
+        onClose={() => setIsOpen(false)}
         onCountsUpdate={setCounts}
       />
       
