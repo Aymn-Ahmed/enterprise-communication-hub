@@ -13,22 +13,26 @@
 
 **Enterprise Communication Hub** is a standalone, pluggable real-time communication module engineered to integrate seamlessly into existing **ERP systems**, **HRMS platforms**, performance evaluation tools, and administrative dashboards.
 
-Instead of rebuilding internal messaging from scratch inside every business application, this module provides a decoupled **ASP.NET Core + SignalR** backend service paired with an embeddable **React + TypeScript** widget—enabling organizations to launch 1-to-1 chats, department channels, official announcements, and media sharing while reusing their host application's authentication and user directory.
+Instead of rebuilding internal messaging from scratch inside every business application, this module provides a decoupled **ASP.NET Core + SignalR** backend service paired with an embeddable **React + TypeScript** widget—enabling organizations to launch 1-to-1 chats, department channels, official announcements, live location sharing, and media sharing while reusing their host application's authentication and user directory.
 
 ---
+
 ## 📸 Screenshots
 
 <img width="1280" height="720" alt="4" src="https://github.com/user-attachments/assets/b790c4aa-0ce0-492a-84d0-34a7155cc22b" />
 <img width="1280" height="720" alt="2" src="https://github.com/user-attachments/assets/2b7386de-2b4d-4a4a-9602-ceb45f84ccb8" />
 <img width="1280" height="720" alt="3" src="https://github.com/user-attachments/assets/a505ba24-cd18-44f1-8b5f-d47d73531dfb" />
 
+---
+
 ## ✨ Key Features
 
-### 💬 Real-Time Messaging
-- **Private Messaging (1-to-1):** Instant direct messaging between employees.
+### 💬 Real-Time Messaging & Rich Interactions
+- **Private & Group Messaging:** Instant 1-to-1 and group conversations powered by SignalR WebSockets (`/chatHub`).
 - **Department & Group Channels:** Structured discussion channels mapped to organizational departments.
 - **Official Announcements:** Broadcast administrative notices to the entire organization or targeted departments.
-- **Live Presence & Interactions:** Real-time Online/Offline user status, typing indicators, and message reactions.
+- **Full Message Lifecycle:** Supports message replies, forwarding, editing, pinning, delivery receipts (`MessageDelivery`), and emoji reactions (`MessageReaction`).
+- **Live Location & Voice Notes:** Interactive map location sharing (`Leaflet`), voice note recording, and live typing/presence indicators.
 
 ### 📤 File & Media Management
 - **Document & Media Sharing:** Upload and download files, images, and videos with upload progress tracking.
@@ -40,7 +44,7 @@ Instead of rebuilding internal messaging from scratch inside every business appl
 - **External ERP/HR Sync:** RESTful endpoints designed to import and synchronize employee records from external host systems.
 
 ### 🔐 Security & Reliability
-- **JWT Bearer Authentication:** Token-based authorization securing both REST endpoints and SignalR WebSocket connections.
+- **JWT Bearer Authentication:** Token-based authorization securing both REST endpoints and SignalR WebSocket connections via custom `IUserIdProvider`.
 - **Automatic Reconnection:** Built-in SignalR connection recovery and state synchronization on network drops.
 
 ---
@@ -56,15 +60,16 @@ Instead of rebuilding internal messaging from scratch inside every business appl
 
 ## 🛠️ Tech Stack
 
-### Frontend
+### Frontend (`Frontend/`)
 - **React & TypeScript:** Type-safe, modular UI widget architecture
 - **Vite:** Fast development server and optimized production bundling
 - **SignalR Client (`@microsoft/signalr`):** Bi-directional real-time WebSocket event handling
+- **UI, Maps & Motion:** `framer-motion`, `leaflet`, `react-leaflet`, `lucide-react`, `react-icons`
 
-### Backend
+### Backend (`Whatsapp_Backend/`)
 - **C# & ASP.NET Core Web API:** RESTful APIs with clean service separation
-- **SignalR Server:** Real-time messaging hub and presence tracking
-- **Entity Framework Core & SQL Server / PostgreSQL:** Relational persistence for messages, users, and files
+- **SignalR Server:** Real-time messaging hub (`/chatHub`) and presence tracking
+- **Entity Framework Core & SQLite / SQL Server:** Relational persistence for messages, delivery receipts, users, and files
 
 ### Architecture
 - **Modular Pluggable Design:** Decoupled from host application business logic
@@ -77,7 +82,7 @@ Instead of rebuilding internal messaging from scratch inside every business appl
 ### Prerequisites
 - [.NET 8 / 9 SDK](https://dotnet.microsoft.com/)
 - [Node.js 18+](https://nodejs.org/)
-- SQL Server or PostgreSQL
+- SQLite or SQL Server
 
 ### Installation & Running
 
@@ -116,42 +121,48 @@ SignalRHubUrl=http://localhost:5270/chatHub
 
 ## 📚 Application Integration Guide
 
-The frontend widget decouples authentication, API calls, and local storage through configurable adapters so the host ERP/HRMS retains full control over user sessions:
+### 1. Backend Integration (.NET Web API)
 
-### Step 1: Import the Module
+Register SignalR, the custom user provider, and the messaging services in `Program.cs`:
 
-```typescript
+```csharp
+// Register SignalR & User Provider
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
+
+// Register Messaging Services
+builder.Services.AddScoped<IMessageDispatchService, MessageDispatchService>();
+builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<MessageReactionService>();
+builder.Services.AddScoped<IRecipientResolver, RecipientResolver>();
+
+// Map SignalR Hub
+app.MapHub<ChatHub>("/chatHub");
+```
+
+### 2. Frontend Integration (React + TypeScript)
+
+#### Step 1: Install Peer Dependencies
+```bash
+npm install @microsoft/signalr framer-motion lucide-react react-icons leaflet react-leaflet lodash
+```
+
+#### Step 2: Configure & Embed the Widget
+```tsx
+import { useState } from 'react';
 import { 
   configureCommunicationHub, 
   CommunicationHubWidget 
-} from './CommunicationHub_Module/Frontend';
-```
+} from './Frontend';
 
-### Step 2: Configure the Service
-
-```typescript
 configureCommunicationHub({
-  // Host application's API client
   apiClient: yourApiClient,
-  
-  // Existing authentication hook
   auth: { 
     useAuthUserHook: yourAuthHook 
   },
-  
-  // SignalR connection hook
   useSignalRHook: yourSignalRHook,
-  
-  // Storage adapter
   storage: yourStorageAdapter
 });
-```
-
-### Step 3: Embed the Communication Widget
-
-```tsx
-import { useState } from 'react';
-import { CommunicationHubWidget } from './CommunicationHub_Module/Frontend';
 
 export function YourApp() {
   const [isOpen, setIsOpen] = useState(false);
@@ -161,14 +172,10 @@ export function YourApp() {
     <div>
       {/* Host Application Content */}
       
-      {/* Communication Widget */}
-     <CommunicationHubWidget 
-        open={isOpen} 
-        onClose={() => setIsOpen(false)}
+      <CommunicationHubWidget onClose="{()" open="{isOpen}"> setIsOpen(false)}
         onCountsUpdate={setCounts}
       />
       
-      {/* Trigger Button */}
       <button onClick={() => setIsOpen(true)}>
         💬 Messages ({counts.unread || 0})
       </button>
